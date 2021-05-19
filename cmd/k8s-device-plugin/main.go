@@ -307,7 +307,7 @@ func main() {
 		// /sys/class/kfd only exists if ROCm kernel/driver is installed
 		//var path = "/sys/class/kfd"
 		//if _, err := os.Stat(path); err == nil {
-		l.ResUpdateChan <- []string{"0"}
+		l.ResUpdateChan <- []string{"1"}
 		//}
 	}()
 	manager.Run()

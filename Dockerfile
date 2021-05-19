@@ -4,8 +4,8 @@ RUN apk --no-cache add git pkgconfig build-base libdrm-dev
 RUN mkdir -p /go/src/github.com/NECVectorEngine/k8s-device-plugin
 ADD . /go/src/github.com/NECVectorEngine/k8s-device-plugin
 RUN go install \
-    -ldflags="-X main.gitDescribe=$(git -C /go/src/github.com/NECVectorEngine/k8s-device-plugin/ describe --always --long --dirty)" \
-    github.com/hazimhasnan/NECVectorEngine/k8s-device-plugin
+    -ldflags="-X main.gitDescribe=$(git -C github.com/hazimhasnan/NECVectorEngine/k8s-device-plugin/ describe --always --long --dirty)" 
+# github.com/hazimhasnan/NECVectorEngine/k8s-device-plugin
 
 FROM alpine:3.13
 RUN apk --no-cache add ca-certificates libdrm

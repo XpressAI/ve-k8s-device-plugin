@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: amdgpu-device-plugin-daemonset
+  name: necve-device-plugin-daemonset
   namespace: kube-system
 spec:
   selector:
     matchLabels:
-      name: amdgpu-dp-ds
+      name: necve-dp-ds
   template:
     metadata:
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ""
+      annotations: #annotations here is deprecated (remove this)
+        scheduler.alpha.kubernetes.io/critical-pod: "" #remove this
       labels:
         name: necve-dp-ds
     spec:
@@ -18,7 +18,7 @@ spec:
         - key: CriticalAddonsOnly
           operator: Exists
       containers:
-        - image: rocm/k8s-device-plugin
+        - image: necve/k8s-device-plugin
           name: necve-dp-cntr
           securityContext:
             allowPrivilegeEscalation: false
@@ -27,12 +27,12 @@ spec:
           volumeMounts:
             - name: dp
               mountPath: /var/lib/kubelet/device-plugins
-            - name: sys
+            - name: sys #might not be necessary
               mountPath: /sys
       volumes:
         - name: dp
           hostPath:
             path: /var/lib/kubelet/device-plugins
-        - name: sys
+        - name: sys #probably unnecessary
           hostPath:
             path: /sys
