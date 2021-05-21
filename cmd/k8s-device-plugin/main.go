@@ -268,7 +268,7 @@ func main() {
 	versions := [...]string{
 		"NEC device plugin for Kubernetes",
 		"Vector Engine 1",
-		"Version 2.4",
+		"Version beta",
 	}
 
 	flag.Usage = func() {
@@ -307,7 +307,7 @@ func main() {
 		// /sys/class/kfd only exists if ROCm kernel/driver is installed
 		//var path = "/sys/class/kfd"
 		//if _, err := os.Stat(path); err == nil {
-		l.ResUpdateChan <- []string{"1"}
+		l.ResUpdateChan <- []string{"ve"} //Change to VE
 		//}
 	}()
 	manager.Run()
