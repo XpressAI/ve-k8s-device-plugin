@@ -197,8 +197,8 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 		// Currently, there are only 1 /dev/kfd per nodes regardless of the # of GPU available
 		// for compute/rocm/HSA use cases
 		dev = new(pluginapi.DeviceSpec)
-		dev.HostPath = "/dev/kfd"
-		dev.ContainerPath = "/dev/kfd"
+		dev.HostPath = "/dev/nec"
+		dev.ContainerPath = "/dev/nec"
 		dev.Permissions = "rw"
 		car.Devices = append(car.Devices, dev)
 
@@ -206,7 +206,7 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 			glog.Infof("Allocating device ID: %s", id)
 
 			for k, v := range p.AMDGPUs { //initially p.AMDGPUs[id]
-				devpath := fmt.Sprintf("/dev/dri/%s%d", k, v)
+				devpath := fmt.Sprintf("/dev/dri/%s%d", k, v) //				**MARK HERE**
 				dev = new(pluginapi.DeviceSpec)
 				dev.HostPath = devpath
 				dev.ContainerPath = devpath
