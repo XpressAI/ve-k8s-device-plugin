@@ -19,7 +19,7 @@ import (
 
 // Plugin is identical to DevicePluginServer interface of device plugin API.
 type Plugin struct {
-	AMDGPUs   map[string]int
+	NECVEs    map[string]int
 	Heartbeat chan bool
 }
 
@@ -108,7 +108,7 @@ func (p *Plugin) PreStartContainer(ctx context.Context, r *pluginapi.PreStartCon
 // Whenever a Device state change or a Device disappears, ListAndWatch
 // returns the new list
 func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
-	p.AMDGPUs = map[string]int{"VE0": 0, "VE1": 1, "VE2": 2}
+	p.NECVEs = map[string]int{"VE0": 0, "VE1": 1, "VE2": 2}
 
 	devs := make([]*pluginapi.Device, 3) // 3is the length
 
@@ -119,7 +119,7 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 		// defer hw.Destroy()
 
 		i := 0
-		for id := range p.AMDGPUs {
+		for id := range p.NECVEs {
 			dev := &pluginapi.Device{
 				ID:     id,
 				Health: pluginapi.Healthy,
@@ -165,7 +165,7 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 			health = pluginapi.Healthy
 		}
 
-		for i := 0; i < len(p.AMDGPUs); i++ {
+		for i := 0; i < len(p.NECVEs); i++ {
 			devs[i].Health = health
 		}
 		s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
@@ -197,7 +197,7 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 		// Currently, there are only 1 /dev/kfd per nodes regardless of the # of GPU available
 		// for compute/rocm/HSA use cases
 		dev = new(pluginapi.DeviceSpec)
-		dev.HostPath = "/dev/nec"
+		dev.HostPath = "/dev/nec" // ***How to set path to individual device***//
 		dev.ContainerPath = "/dev/nec"
 		dev.Permissions = "rw"
 		car.Devices = append(car.Devices, dev)
@@ -205,7 +205,7 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 		for _, id := range req.DevicesIDs {
 			glog.Infof("Allocating device ID: %s", id)
 
-			for k, v := range p.AMDGPUs { //initially p.AMDGPUs[id]
+			for k, v := range p.NECVEs { //initially p.AMDGPUs[id]
 				devpath := fmt.Sprintf("/dev/dri/%s%d", k, v) //				**MARK HERE**
 				dev = new(pluginapi.DeviceSpec)
 				dev.HostPath = devpath
