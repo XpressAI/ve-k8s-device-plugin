@@ -17,7 +17,8 @@ import (
 	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1" //For implementing kubernetes own device plugin framework
 )
 
-// Plugin is identical to DevicePluginServer interface of device plugin API.
+// Plugin is identical to DevicePluginServer
+// interface of device plugin API.
 type Plugin struct {
 	NECVEs    map[string]int
 	Heartbeat chan bool
@@ -108,7 +109,7 @@ func (p *Plugin) PreStartContainer(ctx context.Context, r *pluginapi.PreStartCon
 // Whenever a Device state change or a Device disappears, ListAndWatch
 // returns the new list
 func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
-	p.NECVEs = map[string]int{"VE0": 0, "VE1": 1, "VE2": 2}
+	p.NECVEs = map[string]int{"VE0": 0, "VE1": 1, "VE2": 2} //Call the discover here
 
 	devs := make([]*pluginapi.Device, 3) // 3is the length
 
@@ -117,7 +118,6 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 		// var hw hwloc.Hwloc
 		// hw.Init()
 		// defer hw.Destroy()
-
 		i := 0
 		for id := range p.NECVEs {
 			dev := &pluginapi.Device{
@@ -196,17 +196,17 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 
 		// Currently, there are only 1 /dev/kfd per nodes regardless of the # of GPU available
 		// for compute/rocm/HSA use cases
-		dev = new(pluginapi.DeviceSpec)
-		dev.HostPath = "/dev/nec" // ***How to set path to individual device***//
-		dev.ContainerPath = "/dev/nec"
-		dev.Permissions = "rw"
-		car.Devices = append(car.Devices, dev)
+		// dev = new(pluginapi.DeviceSpec)
+		// dev.HostPath = "/dev/nec" // ***How to set path to individual device***//
+		// dev.ContainerPath = "/dev/nec"
+		// dev.Permissions = "rw"
+		// car.Devices = append(car.Devices, dev)
 
 		for _, id := range req.DevicesIDs {
 			glog.Infof("Allocating device ID: %s", id)
 
 			for k, v := range p.NECVEs { //initially p.AMDGPUs[id]
-				devpath := fmt.Sprintf("/dev/dri/%s%d", k, v) //				**MARK HERE**
+				devpath := fmt.Sprintf("/dev/%s%d", k, v) //				**MARK HERE**
 				dev = new(pluginapi.DeviceSpec)
 				dev.HostPath = devpath
 				dev.ContainerPath = devpath

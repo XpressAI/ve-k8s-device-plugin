@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
+//Return slice of ves which is a map of each ve metadata
 func GetNECVE() ([]map[string]interface{}, error) {
-
 	var veCount int
 	var veID int
 	var currentVe = make(map[string]interface{})

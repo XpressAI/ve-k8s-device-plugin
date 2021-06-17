@@ -37,7 +37,7 @@ spec:
                   key: database_url
           resources:
             limits:
-              nec.com/ve: 1 # requesting a GPU
+              nec.com/ve: 2 # requesting a GPU
 
 ---
 apiVersion: v1
