@@ -17,7 +17,7 @@ func GetNECVE() ([]map[string]interface{}, error) {
 	var lines []string
 
 	//Replace the arguments to "vecmd", "info"
-	cmd := exec.Command("vecmd", "info")
+	cmd := exec.Command("/bin/bash", "vecmd", "info")
 	stdout, err := cmd.Output()
 
 	if err != nil {

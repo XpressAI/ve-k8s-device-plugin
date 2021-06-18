@@ -18,7 +18,7 @@ spec:
         - key: CriticalAddonsOnly
           operator: Exists
       containers:
-        - image: hazimxpressai/k8s-device-plugin:beta0
+        - image: hazimxpressai/k8s-device-plugin:beta2
           name: necve-dp-cntr
           securityContext:
             allowPrivilegeEscalation: false
