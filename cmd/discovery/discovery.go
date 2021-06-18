@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func GetNECVE() ([]map[string]interface{}, error) {
+func main() {
 
 	var veCount int
 	var veID int
@@ -23,7 +23,6 @@ func GetNECVE() ([]map[string]interface{}, error) {
 	if err != nil {
 		fmt.Println("No Result to from the Command")
 		fmt.Println(err.Error())
-		return nil, err
 	}
 
 	//trim and create array of lines
@@ -45,7 +44,7 @@ func GetNECVE() ([]map[string]interface{}, error) {
 			if err != nil {
 				fmt.Println("Unable to parse string to int")
 				fmt.Println(err)
-				return nil, err
+
 			}
 			veCount = int(num)
 			fmt.Println("Number of Attached VEs --- ", veCount)
@@ -85,13 +84,26 @@ func GetNECVE() ([]map[string]interface{}, error) {
 
 	}
 	ves = append(ves, currentVe)
-	return ves, nil
 
-	// for key, value := range ves {
-	// 	fmt.Println("---------------")
-	// 	for key, value := range value {
-	// 		fmt.Printf("%v : %v\n", key, value)
-	// 	}
-	// 	fmt.Printf("Last Line: %v : %v\n", key, value)
-	// }
+	for key, value := range ves {
+		fmt.Println("---------------")
+		for key, value := range value {
+			fmt.Printf("%v : %v\n", key, value)
+		}
+		fmt.Printf("Last Line: %v : %v\n", key, value)
+	}
+
+	y := getVEs(ves)
+	fmt.Println(y)
+}
+
+//Extract the id and dev from NECVE metadatas
+func getVEs(NECDevs []map[string]interface{}) map[string]string {
+	ves := make(map[string]string)
+
+	for _, values := range NECDevs {
+		id := fmt.Sprint(values["id"])
+		ves[id] = fmt.Sprint(values["dev"])
+	}
+	return ves
 }

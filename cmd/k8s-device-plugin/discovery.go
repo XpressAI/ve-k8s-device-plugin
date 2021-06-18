@@ -17,7 +17,7 @@ func GetNECVE() ([]map[string]interface{}, error) {
 	var lines []string
 
 	//Replace the arguments to "vecmd", "info"
-	cmd := exec.Command("cat", "C:\\Users\\Hazim.Hasnan\\Documents\\Work\\vedummy.txt")
+	cmd := exec.Command("vecmd", "info")
 	stdout, err := cmd.Output()
 
 	if err != nil {
@@ -94,4 +94,14 @@ func GetNECVE() ([]map[string]interface{}, error) {
 	// 	}
 	// 	fmt.Printf("Last Line: %v : %v\n", key, value)
 	// }
+}
+
+func getVEs(NECDevs []map[string]interface{}) map[string]string {
+	ves := make(map[string]string)
+
+	for _, values := range NECDevs {
+		id := fmt.Sprint(values["id"])
+		ves[id] = fmt.Sprint(values["dev"])
+	}
+	return ves
 }

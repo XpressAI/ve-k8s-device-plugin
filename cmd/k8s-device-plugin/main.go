@@ -20,7 +20,7 @@ import (
 // Plugin is identical to DevicePluginServer
 // interface of device plugin API.
 type Plugin struct {
-	NECVEs    map[string]int
+	NECVEs    map[string]string
 	Heartbeat chan bool
 }
 
@@ -81,6 +81,7 @@ func (p *Plugin) Stop() error {
 // 	return count
 // }
 
+//					              			*********check this ********
 func simpleHealthCheck() bool {
 	var kfd *os.File
 	var err error
@@ -109,7 +110,12 @@ func (p *Plugin) PreStartContainer(ctx context.Context, r *pluginapi.PreStartCon
 // Whenever a Device state change or a Device disappears, ListAndWatch
 // returns the new list
 func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
-	p.NECVEs = map[string]int{"VE0": 0, "VE1": 1, "VE2": 2} //Call the discover here
+	//p.NECVEs = map[string]string{"0": "ve0", "1": "ve1"} //Call the discover here
+	necDevs, err := GetNECVE()
+	if err != nil {
+		glog.Error("Error executing vecmd info")
+	}
+	p.NECVEs = getVEs(necDevs)
 
 	devs := make([]*pluginapi.Device, 3) // 3is the length
 
@@ -120,6 +126,7 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 		// defer hw.Destroy()
 		i := 0
 		for id := range p.NECVEs {
+			// idStr := strconv.FormatInt(int64(id), 10)
 			dev := &pluginapi.Device{
 				ID:     id,
 				Health: pluginapi.Healthy,
@@ -205,8 +212,8 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 		for _, id := range req.DevicesIDs {
 			glog.Infof("Allocating device ID: %s", id)
 
-			for k, v := range p.NECVEs { //initially p.AMDGPUs[id]
-				devpath := fmt.Sprintf("/dev/%s%d", k, v) //				**MARK HERE**
+			for _, v := range p.NECVEs { //initially p.AMDGPUs[id]
+				devpath := v //"dev/ve0"
 				dev = new(pluginapi.DeviceSpec)
 				dev.HostPath = devpath
 				dev.ContainerPath = devpath
