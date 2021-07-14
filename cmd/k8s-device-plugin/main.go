@@ -1,14 +1,9 @@
 package main
 
 import (
-	// "bufio"
 	"flag"
 	"fmt"
 	"os"
-
-	// "path/filepath"
-	// "regexp"
-	// "strconv"
 	"time"
 
 	"github.com/golang/glog"                                 //For logging
@@ -81,7 +76,7 @@ func (p *Plugin) Stop() error {
 // 	return count
 // }
 
-//					              			*********check this ********
+//					              			********* kill this invisible bug ********
 func simpleHealthCheck() bool {
 	var kfd *os.File
 	var err error
@@ -110,14 +105,15 @@ func (p *Plugin) PreStartContainer(ctx context.Context, r *pluginapi.PreStartCon
 // Whenever a Device state change or a Device disappears, ListAndWatch
 // returns the new list
 func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
-	//p.NECVEs = map[string]string{"0": "ve0", "1": "ve1"} //Call the discover here
-	necDevs, err := GetNECVE()
+	// p.NECVEs = map[string]string{"0": "/dev/ve0"} //Call the discover here
+
+	necDevs, err := GetNECVEInfo()
 	if err != nil {
-		glog.Error("Error executing vecmd info")
+		glog.Error(err, "Error reading veinfo") //*****!!!!!*****
 	}
 	p.NECVEs = getVEs(necDevs)
-
-	devs := make([]*pluginapi.Device, 3) // 3is the length
+	glog.Info(p.NECVEs)
+	devs := make([]*pluginapi.Device, len(p.NECVEs)) // 3is the length
 
 	// limit scope for hwloc
 	func() {
@@ -161,7 +157,7 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 
 	s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
 
-	for {
+	for { //****                                                                       *****WHy no error****
 
 		<-p.Heartbeat
 		var health = pluginapi.Unhealthy
@@ -287,7 +283,6 @@ func main() {
 	}
 	var pulse int
 	flag.IntVar(&pulse, "pulse", 0, "time between health check polling in seconds.  Set to 0 to disable.")
-	// this is also needed to enable glog usage in dpm
 	flag.Parse()
 
 	for _, v := range versions {

@@ -25,7 +25,7 @@ func main() {
 		fmt.Println(err.Error())
 	}
 
-	//trim and create array of lines
+	//Trim and create array of lines
 	vecmdResult := strings.NewReader(string(stdout))
 	scanner := bufio.NewScanner(vecmdResult)
 	for scanner.Scan() {

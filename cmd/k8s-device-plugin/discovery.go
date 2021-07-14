@@ -9,7 +9,7 @@ import (
 )
 
 //Return slice of ves which is a map of each ve metadata
-func GetNECVE() ([]map[string]interface{}, error) {
+func GetNECVEInfo() ([]map[string]interface{}, error) {
 	var veCount int
 	var veID int
 	var currentVe = make(map[string]interface{})
@@ -17,7 +17,7 @@ func GetNECVE() ([]map[string]interface{}, error) {
 	var lines []string
 
 	//Replace the arguments to "vecmd", "info"
-	cmd := exec.Command("/bin/bash", "vecmd", "info")
+	cmd := exec.Command("/bin/cat", "k8s/veinfo")
 	stdout, err := cmd.Output()
 
 	if err != nil {
