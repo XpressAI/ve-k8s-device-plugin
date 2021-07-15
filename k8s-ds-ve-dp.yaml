@@ -9,8 +9,8 @@ spec:
       name: necve-dp-ds
   template:
     metadata:
-      annotations: #annotations here is deprecated (remove this)
-        scheduler.alpha.kubernetes.io/critical-pod: "" #remove this
+      annotations: 
+        scheduler.alpha.kubernetes.io/critical-pod: ""
       labels:
         name: necve-dp-ds
     spec:
@@ -18,27 +18,28 @@ spec:
         - key: CriticalAddonsOnly
           operator: Exists
       containers:
-        - image: hazimxpressai/k8s-device-plugin:beta0
-          name: necve-dp-ds
+        - image: ve/k8s-device-plugin
+          name: necve-dp-cntr
+          imagePullPolicy: Never
           securityContext:
             allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
           volumeMounts:
             - name: dp
               mountPath: /var/lib/kubelet/device-plugins
-            - name: sys #might not be necessary
+            - name: sys 
               mountPath: /sys
-            - name: kotak #might not be necessary
-              mountPath: /opt/kotak
-            
+            - name: veinfo
+              mountPath: /root/k8s
+          capabilities:
+            drop: ["ALL"]
       volumes:
         - name: dp
           hostPath:
             path: /var/lib/kubelet/device-plugins
-        - name: sys #probably unnecessary
+        - name: sys 
           hostPath:
             path: /sys
-        - name: kotak #probably unnecessary
+        - name: veinfo
           hostPath:
-            path: /opt/kotak
+            path: /opt/k8s/nec/ve/
+             
