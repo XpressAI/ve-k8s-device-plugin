@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/glog"                                 //For logging
-	"github.com/kubevirt/device-plugin-manager/pkg/dpm"      //provides abstraction to kubernetes official plugin framework
-	"golang.org/x/net/context"                               //deadlines, cancelation signals, and other request-scoped values across API boundaries and between processes.
-	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1" //For implementing kubernetes own device plugin framework
+	"github.com/golang/glog"
+	"github.com/kubevirt/device-plugin-manager/pkg/dpm"
+	"golang.org/x/net/context"
+	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 )
 
 // Plugin is identical to DevicePluginServer
@@ -36,47 +36,6 @@ func (p *Plugin) Stop() error {
 	return nil
 }
 
-// var topoSIMDre = regexp.MustCompile(`simd_count\s(\d+)`)
-
-// func countGPUDevFromTopology(topoRootParam ...string) int {
-// 	topoRoot := "/sys/class/kfd/kfd"
-// 	if len(topoRootParam) == 1 {
-// 		topoRoot = topoRootParam[0]
-// 	}
-
-// 	count := 0
-// 	var nodeFiles []string
-// 	var err error
-// 	if nodeFiles, err = filepath.Glob(topoRoot + "/topology/nodes/*/properties"); err != nil {
-// 		glog.Fatalf("glob error: %s", err)
-// 		return count
-// 	}
-
-// 	for _, nodeFile := range nodeFiles {
-// 		glog.Info("Parsing " + nodeFile)
-// 		f, e := os.Open(nodeFile)
-// 		if e != nil {
-// 			continue
-// 		}
-
-// 		scanner := bufio.NewScanner(f)
-// 		for scanner.Scan() {
-// 			m := topoSIMDre.FindStringSubmatch(scanner.Text())
-// 			if m == nil {
-// 				continue
-// 			}
-
-// 			if v, _ := strconv.Atoi(m[1]); v > 0 {
-// 				count++
-// 				break
-// 			}
-// 		}
-// 		f.Close()
-// 	}
-// 	return count
-// }
-
-//					              			********* kill this invisible bug ********
 func simpleHealthCheck() bool {
 	var kfd *os.File
 	var err error
@@ -105,21 +64,16 @@ func (p *Plugin) PreStartContainer(ctx context.Context, r *pluginapi.PreStartCon
 // Whenever a Device state change or a Device disappears, ListAndWatch
 // returns the new list
 func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
-	// p.NECVEs = map[string]string{"0": "/dev/ve0"} //Call the discover here
 
 	necDevs, err := GetNECVEInfo()
 	if err != nil {
-		glog.Error(err, "Error reading veinfo") //*****!!!!!*****
+		glog.Error(err, "Error reading veinfo")
 	}
 	p.NECVEs = getVEs(necDevs)
 	glog.Info(p.NECVEs)
-	devs := make([]*pluginapi.Device, len(p.NECVEs)) // 3is the length
+	devs := make([]*pluginapi.Device, len(p.NECVEs))
 
-	// limit scope for hwloc
 	func() {
-		// var hw hwloc.Hwloc
-		// hw.Init()
-		// defer hw.Destroy()
 		i := 0
 		for id := range p.NECVEs {
 			// idStr := strconv.FormatInt(int64(id), 10)
@@ -197,14 +151,6 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 	for _, req := range r.ContainerRequests {
 		car = pluginapi.ContainerAllocateResponse{}
 
-		// Currently, there are only 1 /dev/kfd per nodes regardless of the # of GPU available
-		// for compute/rocm/HSA use cases
-		// dev = new(pluginapi.DeviceSpec)
-		// dev.HostPath = "/dev/nec" // ***How to set path to individual device***//
-		// dev.ContainerPath = "/dev/nec"
-		// dev.Permissions = "rw"
-		// car.Devices = append(car.Devices, dev)
-
 		for _, id := range req.DevicesIDs {
 			glog.Infof("Allocating device ID: %s", id)
 
@@ -270,8 +216,7 @@ func (l *Lister) NewPlugin(resourceLastName string) dpm.PluginInterface {
 func main() {
 	versions := [...]string{
 		"NEC device plugin for Kubernetes",
-		"Vector Engine 1",
-		"Version beta",
+		"Vector 1",
 	}
 
 	flag.Usage = func() {
@@ -306,11 +251,10 @@ func main() {
 	}
 
 	go func() {
-		// /sys/class/kfd only exists if ROCm kernel/driver is installed
-		//var path = "/sys/class/kfd"
-		//if _, err := os.Stat(path); err == nil {
-		l.ResUpdateChan <- []string{"ve"} //Change to VE
-		//}
+		var path = "/sys/class/kfd"
+		if _, err := os.Stat(path); err == nil {
+			l.ResUpdateChan <- []string{"ve"} //Change to VE
+		}
 	}()
 	manager.Run()
 

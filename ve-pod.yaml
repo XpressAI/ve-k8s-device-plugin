@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ve-pod
+  labels:
+    purpose: ve-pod
+spec:
+  containers:
+    - name: ve-container
+      image: hazimxpressai/veos:beta0  # Get the veos docker image
+      workingDir: /root
+      volumeMounts:
+        - name: veos
+          mountPath: /var/opt/nec/ve/veos
+        - name: dev
+          mountPath: /dev
+        - name: home
+          mountPath: /root/
+      env:
+      command: # Specify the command to run the executable
+      resources:
+        limits:
+          nec.com/ve: 1 # Specify the number of vector engine needed
+  volumes:
+    - name: veos
+      hostPath:
+        path: /var/opt/nec/ve/veos
+    - name: dev
+      hostPath:
+        path: /dev
+    - name: home
+      hostPath:
+          path: #Specify the path to your executable
