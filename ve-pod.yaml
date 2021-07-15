@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
     - name: ve-container
-      image: hazimxpressai/veos:beta0  # Get the veos docker image
+      image: nec/ve-pod  # Get the veos docker image
       workingDir: /root
       volumeMounts:
         - name: veos

@@ -39,8 +39,8 @@ func (p *Plugin) Stop() error {
 func simpleHealthCheck() bool {
 	var kfd *os.File
 	var err error
-	if kfd, err = os.Open("/dev/kfd"); err != nil {
-		glog.Error("Error opening /dev/kfd")
+	if kfd, err = os.Open("/dev/ve0"); err != nil {
+		glog.Error("Error opening /dev/ve0")
 		return false
 	}
 	kfd.Close()
@@ -83,35 +83,12 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 			}
 			devs[i] = dev
 			i++
-
-			// numas, err := hw.GetNUMANodes(id)
-			// glog.Infof("Watching GPU with bus ID: %s NUMA Node: %+v", id, numas)
-			// if err != nil {
-			// 	glog.Error(err)
-			// 	continue
-			// }
-
-			// if len(numas) == 0 {
-			// 	glog.Errorf("No NUMA for GPU ID: %s", id)
-			// 	continue
-			// }
-
-			// numaNodes := make([]*pluginapi.NUMANode, len(numas))
-			// for j, v := range numas {
-			// 	numaNodes[j] = &pluginapi.NUMANode{
-			// 		ID: int64(v),
-			// 	}
-			// }
-			////testingbranch
-			// dev.Topology = &pluginapi.TopologyInfo{
-			// 	Nodes: numaNodes,
-			// }
 		}
 	}()
 
 	s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
 
-	for { //****                                                                       *****WHy no error****
+	for { //****
 
 		<-p.Heartbeat
 		var health = pluginapi.Unhealthy
@@ -251,10 +228,10 @@ func main() {
 	}
 
 	go func() {
-		var path = "/sys/class/kfd"
-		if _, err := os.Stat(path); err == nil {
-			l.ResUpdateChan <- []string{"ve"} //Change to VE
-		}
+		//var path = "/sys/class/kfd"
+		//if _, err := os.Stat(path); err == nil {
+		l.ResUpdateChan <- []string{"ve"} //Change to VE
+		//}
 	}()
 	manager.Run()
 
