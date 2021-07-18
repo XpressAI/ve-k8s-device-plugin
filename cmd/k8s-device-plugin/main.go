@@ -88,13 +88,12 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 
 	s.Send(&pluginapi.ListAndWatchResponse{Devices: devs})
 
-	for { //****
+	for { //
 
 		<-p.Heartbeat
 		var health = pluginapi.Unhealthy
 
 		// TODO there are no per device health check currently
-		// TODO all devices on a node is used together by kfd
 		if simpleHealthCheck() {
 			health = pluginapi.Healthy
 		}
@@ -131,7 +130,7 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 		for _, id := range req.DevicesIDs {
 			glog.Infof("Allocating device ID: %s", id)
 
-			for _, v := range p.NECVEs { //initially p.AMDGPUs[id]
+			for _, v := range p.NECVEs {
 				devpath := v //"dev/ve0"
 				dev = new(pluginapi.DeviceSpec)
 				dev.HostPath = devpath
@@ -234,5 +233,4 @@ func main() {
 		//}
 	}()
 	manager.Run()
-
 }

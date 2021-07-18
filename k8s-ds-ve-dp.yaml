@@ -23,6 +23,8 @@ spec:
           imagePullPolicy: Never
           securityContext:
             allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           volumeMounts:
             - name: dp
               mountPath: /var/lib/kubelet/device-plugins
@@ -30,8 +32,6 @@ spec:
               mountPath: /sys
             - name: veinfo
               mountPath: /root/k8s
-          capabilities:
-            drop: ["ALL"]
       volumes:
         - name: dp
           hostPath:
@@ -41,5 +41,5 @@ spec:
             path: /sys
         - name: veinfo
           hostPath:
-            path: /opt/k8s/nec/ve/
+            path: /var/opt/nec/k8s
              
