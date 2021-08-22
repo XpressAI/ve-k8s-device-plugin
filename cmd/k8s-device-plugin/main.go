@@ -124,24 +124,35 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 	var car pluginapi.ContainerAllocateResponse
 	var dev *pluginapi.DeviceSpec
 
+	i := 0
 	for _, req := range r.ContainerRequests {
 		car = pluginapi.ContainerAllocateResponse{}
 
 		for _, id := range req.DevicesIDs {
 			glog.Infof("Allocating device ID: %s", id)
-
-			for _, v := range p.NECVEs {
-				devpath := v //"dev/ve0"
-				dev = new(pluginapi.DeviceSpec)
-				dev.HostPath = devpath
-				dev.ContainerPath = devpath
-				dev.Permissions = "rw"
-				car.Devices = append(car.Devices, dev)
+			for devId, devPath := range p.NECVEs {
+				if devId == id {
+					dev = &pluginapi.DeviceSpec{
+						HostPath:      devPath,
+						ContainerPath: fmt.Sprintf("/dev/ve%d", i),
+						Permissions:   "rw",
+					}
+					car.Devices = append(car.Devices, dev)
+					dev = &pluginapi.DeviceSpec{
+						HostPath:      devPath,
+						ContainerPath: fmt.Sprintf("/dev/veslot%d", i),
+						Permissions:   "rw",
+					}
+					car.Devices = append(car.Devices, dev)
+					i++
+				}
 			}
 		}
 
 		response.ContainerResponses = append(response.ContainerResponses, &car)
 	}
+
+	glog.Infof("Allocate responses %+v", response)
 
 	return &response, nil
 }
