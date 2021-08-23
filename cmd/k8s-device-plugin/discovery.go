@@ -1,99 +1,65 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os/exec"
-	"strconv"
+	"github.com/golang/glog"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
 //Return slice of ves which is a map of each ve metadata
 func GetNECVEInfo() ([]map[string]interface{}, error) {
-	var veCount int
-	var veID int
-	var currentVe = make(map[string]interface{})
 	var ves = make([]map[string]interface{}, 0)
-	var lines []string
 
-	//Replace the arguments to "vecmd", "info"
-	cmd := exec.Command("/bin/cat", "k8s/veinfo")
-	stdout, err := cmd.Output()
+	files, err := ioutil.ReadDir("/sys/class/ve")
 
 	if err != nil {
-		fmt.Println("No Result to from the Command")
-		fmt.Println(err.Error())
+		glog.Error(err, "Error listing /sys/class/ve")
 		return nil, err
 	}
 
-	//trim and create array of lines
-	vecmdResult := strings.NewReader(string(stdout))
-	scanner := bufio.NewScanner(vecmdResult)
-	for scanner.Scan() {
-		trimmedLine := strings.TrimSpace(scanner.Text())
-		lines = append(lines, trimmedLine)
-	}
+	glog.Info("Number of Attached VEs --- ", len(files))
 
-	for _, line := range lines {
+	for _, file := range files {
+		var curVe = make(map[string]interface{})
+		devName := file.Name()
+		glog.Info("VE Device --- ", devName)
 
-		switch {
-		case strings.HasPrefix(line, "Attached VEs"):
-
-			arrayString := strings.Fields(line)
-			numString := arrayString[len(arrayString)-1]
-			num, err := strconv.ParseInt(numString, 0, 32)
-			if err != nil {
-				fmt.Println("Unable to parse string to int")
-				fmt.Println(err)
-				return nil, err
-			}
-			veCount = int(num)
-			fmt.Println("Number of Attached VEs --- ", veCount)
-
-		case strings.HasPrefix(line, "[V"):
-			fmt.Println(line)
-			if len(currentVe) != 0 {
-				ves = append(ves, currentVe)
-			}
-			veID++
-			currentVe["id"] = veID
-			currentVe["dev"] = "/dev/ve" + strconv.FormatInt(int64(veID-1), 10)
-			// stat := unix.Stat_t{}
-			// err := unix.Stat("/dev/ve", &stat)
-			// if err != nil {
-			// 	fmt.Println("Error getting major and minor number")
-			// }
-			// major := unix.Major(stat.Rdev)
-			// minor := unix.Minor(stat.Rdev)
-			// fmt.Println(major, minor)
-			//fmt.Println("Major:", uint64(stat.Rdev/256), "Minor:", uint64(stat.Rdev%256))
-
-		case strings.HasPrefix(line, "VE State"):
-
-			arrayString := strings.Fields(line)
-			state := arrayString[len(arrayString)-1]
-			currentVe["state"] = state
-			fmt.Println("VE State is --- ", currentVe["state"])
-
-		case strings.HasPrefix(line, "Bus ID"):
-
-			arrayString := strings.Fields(line)
-			busId := arrayString[len(arrayString)-1]
-			currentVe["busId"] = busId
-			fmt.Println("Bus ID is --- ", currentVe["busId"])
+		bytes, err := ioutil.ReadFile("/sys/class/ve/" + devName + "/ve_state")
+		if err != nil {
+			glog.Error(err, "Error reading ve_state")
+			return nil, err
 		}
 
-	}
-	ves = append(ves, currentVe)
-	return ves, nil
+		state := "OFFLINE"
+		if strings.TrimSpace(string(bytes)) == "1" {
+			state = "ONLINE"
+		}
+		glog.Info("VE State is --- ", state)
 
-	// for key, value := range ves {
-	// 	fmt.Println("---------------")
-	// 	for key, value := range value {
-	// 		fmt.Printf("%v : %v\n", key, value)
-	// 	}
-	// 	fmt.Printf("Last Line: %v : %v\n", key, value)
-	// }
+		readlink, err := os.Readlink("/sys/class/ve/" + devName + "/device")
+		if err != nil {
+			glog.Error(err, "Error reading device")
+			return nil, err
+		}
+
+		fullBusId := filepath.Base(readlink)
+		busIdParts := strings.SplitN(fullBusId, ":", 2)
+		busId := busIdParts[1]
+		glog.Info("Bus ID is --- ", busId)
+
+		devNum := strings.Split(devName, "ve")[1]
+
+		curVe["id"] = devNum
+		curVe["dev"] = "/dev/" + devName
+		curVe["state"] = state
+		curVe["busId"] = busId
+		ves = append(ves, curVe)
+	}
+
+	return ves, nil
 }
 
 func getVEs(NECDevs []map[string]interface{}) map[string]string {
