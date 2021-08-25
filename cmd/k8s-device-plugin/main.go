@@ -149,6 +149,16 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 			}
 		}
 
+		car.Mounts = append(car.Mounts, &pluginapi.Mount{
+			HostPath:      "/var/opt/nec/ve/veos",
+			ContainerPath: "/var/opt/nec/ve/veos",
+		})
+
+		car.Mounts = append(car.Mounts, &pluginapi.Mount{
+			HostPath:      "/sys",
+			ContainerPath: "/sys",
+		})
+
 		response.ContainerResponses = append(response.ContainerResponses, &car)
 	}
 
