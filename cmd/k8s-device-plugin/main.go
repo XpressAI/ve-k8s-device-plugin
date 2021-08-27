@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -15,7 +16,7 @@ import (
 // Plugin is identical to DevicePluginServer
 // interface of device plugin API.
 type Plugin struct {
-	NECVEs    map[string]string
+	NECVEs    []VEInfo
 	Heartbeat chan bool
 }
 
@@ -69,16 +70,17 @@ func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListA
 	if err != nil {
 		glog.Error(err, "Error reading veinfo")
 	}
-	p.NECVEs = getVEs(necDevs)
+	p.NECVEs = necDevs
+
 	glog.Info(p.NECVEs)
 	devs := make([]*pluginapi.Device, len(p.NECVEs))
 
 	func() {
 		i := 0
-		for id := range p.NECVEs {
+		for _, veinfo := range p.NECVEs {
 			// idStr := strconv.FormatInt(int64(id), 10)
 			dev := &pluginapi.Device{
-				ID:     id,
+				ID:     veinfo.slot,
 				Health: pluginapi.Healthy,
 			}
 			devs[i] = dev
@@ -126,29 +128,32 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 
 	i := 0
 	for _, req := range r.ContainerRequests {
-		car = pluginapi.ContainerAllocateResponse{}
+		car = pluginapi.ContainerAllocateResponse{
+			Envs: make(map[string]string),
+		}
+		mappings := ""
 
 		for _, id := range req.DevicesIDs {
 			glog.Infof("Allocating device ID: %s", id)
-			for devId, devPath := range p.NECVEs {
-				if devId == id {
+			for _, veinfo := range p.NECVEs {
+				if id == veinfo.slot {
+					devicePath := fmt.Sprintf("/dev/%s", veinfo.device)
 					dev = &pluginapi.DeviceSpec{
-						HostPath:      devPath,
-						ContainerPath: fmt.Sprintf("/dev/ve%d", i),
+						HostPath:      devicePath,
+						ContainerPath: devicePath,
 						Permissions:   "rw",
 					}
 					car.Devices = append(car.Devices, dev)
-					dev = &pluginapi.DeviceSpec{
-						HostPath:      devPath,
-						ContainerPath: fmt.Sprintf("/dev/veslot%d", i),
-						Permissions:   "rw",
-					}
-					car.Devices = append(car.Devices, dev)
+					mappingName := fmt.Sprintf("VE_SLOT_MAPPING_%d", i)
+					car.Envs[mappingName] = veinfo.slot + ":" + veinfo.device
+					car.Envs["VE_NODE_NUMBER"] = strings.Split(veinfo.slot, "veslot")[1]
+					mappings = mappings + " " + mappingName
 					i++
 				}
 			}
 		}
 
+		car.Envs["VE_SLOT_MAPPINGS"] = mappings
 		car.Mounts = append(car.Mounts, &pluginapi.Mount{
 			HostPath:      "/var/opt/nec/ve/veos",
 			ContainerPath: "/var/opt/nec/ve/veos",
