@@ -1,73 +1,67 @@
 package main
 
 import (
-	"fmt"
 	"github.com/golang/glog"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
-//Return slice of ves which is a map of each ve metadata
-func GetNECVEInfo() ([]map[string]interface{}, error) {
-	var ves = make([]map[string]interface{}, 0)
+type VEInfo struct {
+	slot   string
+	device string
+}
 
-	files, err := ioutil.ReadDir("/sys/class/ve")
+func GetNECVEInfo() ([]VEInfo, error) {
+	var ves = make([]VEInfo, 0)
 
+	devices, err := ioutil.ReadDir("/dev")
 	if err != nil {
-		glog.Error(err, "Error listing /sys/class/ve")
+		glog.Error(err, "Error listing /dev")
 		return nil, err
 	}
 
-	glog.Info("Number of Attached VEs --- ", len(files))
+	foundDevicesCount := 0
+	foundDevicesOnline := 0
+	for _, deviceFile := range devices {
+		deviceName := deviceFile.Name()
+		if strings.HasPrefix(deviceName, "veslot") {
+			glog.Info("VE Device --- ", deviceName)
+			foundDevicesCount++
 
-	for _, file := range files {
-		var curVe = make(map[string]interface{})
-		devName := file.Name()
-		glog.Info("VE Device --- ", devName)
+			device, err := os.Readlink("/dev/" + deviceName)
+			if err != nil {
+				glog.Error(err, "Error reading "+deviceName+" symlink")
+				return nil, err
+			}
+			glog.Info("VE actual device: ", device)
 
-		bytes, err := ioutil.ReadFile("/sys/class/ve/" + devName + "/ve_state")
-		if err != nil {
-			glog.Error(err, "Error reading ve_state")
-			return nil, err
+			bytes, err := ioutil.ReadFile("/sys/class/ve/" + device + "/ve_state")
+			if err != nil {
+				glog.Error(err, "Error reading ve_state")
+				return nil, err
+			}
+
+			state := "OFFLINE"
+			if strings.TrimSpace(string(bytes)) == "1" {
+				state = "ONLINE"
+			}
+			glog.Info("VE State: ", state)
+
+			if state == "ONLINE" {
+				foundDevicesOnline++
+				var curVe = make(map[string]interface{})
+				curVe["slot"] = deviceName
+				curVe["device"] = device
+
+				ves = append(ves, VEInfo{
+					slot:   deviceName,
+					device: device,
+				})
+			}
 		}
-
-		state := "OFFLINE"
-		if strings.TrimSpace(string(bytes)) == "1" {
-			state = "ONLINE"
-		}
-		glog.Info("VE State is --- ", state)
-
-		readlink, err := os.Readlink("/sys/class/ve/" + devName + "/device")
-		if err != nil {
-			glog.Error(err, "Error reading device")
-			return nil, err
-		}
-
-		fullBusId := filepath.Base(readlink)
-		busIdParts := strings.SplitN(fullBusId, ":", 2)
-		busId := busIdParts[1]
-		glog.Info("Bus ID is --- ", busId)
-
-		devNum := strings.Split(devName, "ve")[1]
-
-		curVe["id"] = devNum
-		curVe["dev"] = "/dev/" + devName
-		curVe["state"] = state
-		curVe["busId"] = busId
-		ves = append(ves, curVe)
 	}
-
+	glog.Info("Total Devices found:  ", foundDevicesCount)
+	glog.Info("ONLINE Devices found:  ", foundDevicesOnline)
 	return ves, nil
-}
-
-func getVEs(NECDevs []map[string]interface{}) map[string]string {
-	ves := make(map[string]string)
-
-	for _, values := range NECDevs {
-		id := fmt.Sprint(values["id"])
-		ves[id] = fmt.Sprint(values["dev"])
-	}
-	return ves
 }
