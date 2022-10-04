@@ -9,18 +9,16 @@ spec:
       name: necve-dp-ds
   template:
     metadata:
-      annotations: 
-        scheduler.alpha.kubernetes.io/critical-pod: ""
       labels:
         name: necve-dp-ds
     spec:
+      priorityClassName: system-node-critical
       tolerations:
         - key: CriticalAddonsOnly
           operator: Exists
       containers:
         - image: ve/k8s-device-plugin
           name: necve-dp-cntr
-          imagePullPolicy: Never
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -30,8 +28,8 @@ spec:
               mountPath: /var/lib/kubelet/device-plugins
             - name: sys 
               mountPath: /sys
-            - name: veinfo
-              mountPath: /root/k8s
+            - name: dev
+              mountPath: /dev
       volumes:
         - name: dp
           hostPath:
@@ -39,7 +37,8 @@ spec:
         - name: sys 
           hostPath:
             path: /sys
-        - name: veinfo
+        - name: dev
           hostPath:
-            path: /var/opt/nec/k8s
+            path: /dev
+
              
